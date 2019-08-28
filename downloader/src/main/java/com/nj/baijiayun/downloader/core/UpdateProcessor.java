@@ -1,12 +1,17 @@
 package com.nj.baijiayun.downloader.core;
 
+import android.arch.lifecycle.LifecycleOwner;
 import android.os.Handler;
 import android.os.Message;
 
+import android.support.annotation.NonNull;
 import com.arialyy.aria.core.download.DownloadEntity;
+import com.arialyy.aria.orm.annotation.NoNull;
 import com.baijiayun.download.DownloadModel;
 import com.baijiayun.download.DownloadTask;
 import com.baijiayun.download.constant.DownloadType;
+import com.nj.baijiayun.downloader.ListenerTracker;
+import com.nj.baijiayun.downloader.config.SingleRealmTracker;
 import com.nj.baijiayun.logger.log.Logger;
 import com.nj.baijiayun.downloader.RealmManager;
 import com.nj.baijiayun.downloader.adapter.FileDownloadAdapter;
@@ -14,10 +19,10 @@ import com.nj.baijiayun.downloader.adapter.VideoDownloadAdapter;
 import com.nj.baijiayun.downloader.realmbean.DownloadItem;
 import com.nj.baijiayun.downloader.utils.VideoDownloadUtils;
 
-import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
 import io.realm.Realm;
 import io.realm.RealmResults;
@@ -39,8 +44,8 @@ public class UpdateProcessor implements UpdateController {
     private final FileDownloadAdapter fileDownloadAdapter;
     private final VideoDownloadAdapter videoDownloadAdapter;
     private final VideoDownloadManager videoDownloadManager;
-    private final String uid;
-    private HashMap<DownloadItem, Object> downloadMap;
+    private String uid;
+    private ConcurrentHashMap<DownloadItem, Object> downloadMap;
     private InfoUpdateHandler infoUpdateHandler;
     private int liveBeats = DEFAULT_LIVE;
 
@@ -78,7 +83,7 @@ public class UpdateProcessor implements UpdateController {
             if (checkNeedSync(videoItems, videoTasks, fileItems, fileTasks)) {
                 syncDownloadItem();
             }
-            downloadMap = new HashMap<>();
+            downloadMap = new ConcurrentHashMap<>();
             for (DownloadItem videoItem : videoItems) {
                 for (DownloadTask videoTask : videoTasks) {
                     //判断类型是否相同
@@ -169,7 +174,7 @@ public class UpdateProcessor implements UpdateController {
     public void update() {
         realm.executeTransactionAsync(new Realm.Transaction() {
             @Override
-            public void execute(@NotNull Realm realm) {
+            public void execute(@NonNull Realm realm) {
                 synchronized (UpdateProcessor.this) {
                     RealmResults<DownloadItem> allDownloadingItems = getAllDownloadingItems(uid, realm);
                     if (allDownloadingItems.size() == 0) {
@@ -286,9 +291,7 @@ public class UpdateProcessor implements UpdateController {
      * 新增单个下载任务
      */
     public void newTask(DownloadItem downloadItem, Object item) {
-        synchronized (UpdateProcessor.this) {
-            downloadMap.put(downloadItem, item);
-        }
+        downloadMap.put(downloadItem, item);
         checkToResumeProcessor();
     }
 
@@ -330,6 +333,14 @@ public class UpdateProcessor implements UpdateController {
             videoDownloadManager.resumeDownload((DownloadTask) object);
         }
         checkToResumeProcessor();
+    }
+
+    public void beginTracker(SingleRealmTracker tracker, LifecycleOwner owner) {
+        updateDispatcher.registerSingleListener(owner, tracker);
+    }
+
+    public void updateUid(String uid) {
+        this.uid = uid;
     }
 
     /**

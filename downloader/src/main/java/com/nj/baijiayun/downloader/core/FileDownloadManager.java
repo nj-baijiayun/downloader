@@ -78,8 +78,8 @@ public class FileDownloadManager {
 
 
     @Keep
-    @Download.onTaskStart
-    void taskComplete(DownloadTask task) {
+    @Download.onPre
+    void taskPre(DownloadTask task) {
         FileOpenCallBack callBack = callBackMap.get(task.getKey());
         if (callBack != null) {
             callBack.onTaskStart(task);
@@ -106,5 +106,6 @@ public class FileDownloadManager {
     public abstract static class FileOpenCallBack<T> {
 
         public abstract void onTaskStart(DownloadTask task);
+
     }
 }

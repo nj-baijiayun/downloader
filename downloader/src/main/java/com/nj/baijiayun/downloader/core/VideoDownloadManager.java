@@ -4,6 +4,7 @@ import android.content.Context;
 import android.widget.Toast;
 
 import com.baijiahulian.common.networkv2.HttpException;
+import com.baijiayun.constant.VideoDefinition;
 import com.baijiayun.download.DownloadListener;
 import com.baijiayun.download.DownloadManager;
 import com.baijiayun.download.DownloadModel;
@@ -15,6 +16,7 @@ import com.nj.baijiayun.downloader.realmbean.DownloadItem;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Consumer;
@@ -87,17 +89,30 @@ public final class VideoDownloadManager {
         downloadManager.loadDownloadInfo();
     }
 
-    public void updateDownloadPath(String filePath) {
+    public void updateDownloadPath(String uid, String filePath) {
         downloadManager.setTargetFolder(filePath);
-        downloadManager.loadDownloadInfo(true);
+        downloadManager.loadDownloadInfo(uid, true);
     }
 
-    public void downloadVideo(String fileName, long videoId, String token, String extraInfo, final DownloadItem item, final UpdateProcessor updateProcessor) {
-        Disposable d = downloadManager
-                .newVideoDownloadTask(fileName,
-                        videoId,
-                        token,
-                        extraInfo)
+    public void downloadVideo(String fileName, long videoId, String token, String extraInfo, final DownloadItem item, final UpdateProcessor updateProcessor, List<VideoDefinition> videoDefinitions) {
+        Observable<DownloadTask> downloadTaskObservable;
+        if (videoDefinitions == null) {
+            downloadTaskObservable = downloadManager
+                    .newVideoDownloadTask(fileName,
+                            videoId,
+                            token,
+                            extraInfo);
+        } else {
+            downloadTaskObservable = downloadManager
+                    .newVideoDownloadTask(fileName,
+                            videoId,
+                            token,
+                            extraInfo,
+                            "",
+                            true,
+                            videoDefinitions);
+        }
+        Disposable d = downloadTaskObservable
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new Consumer<DownloadTask>() {
                     @Override
@@ -122,13 +137,26 @@ public final class VideoDownloadManager {
     }
 
 
-    public void downloadPlayBack(String fileName, long videoId, String token, String extraInfo, final DownloadItem item, final UpdateProcessor updateProcessor) {
-        Disposable d = downloadManager
-                .newPlaybackDownloadTask(fileName,
-                        videoId,
-                        0,//sessionId
-                        token,
-                        extraInfo)
+    public void downloadPlayBack(String fileName, long videoId, String token, String extraInfo, final DownloadItem item, final UpdateProcessor updateProcessor, List<VideoDefinition> videoDefinitions) {
+        Observable<DownloadTask> downloadTaskObservable;
+        if (videoDefinitions == null) {
+            downloadTaskObservable = downloadManager
+                    .newPlaybackDownloadTask(fileName,
+                            videoId,
+                            0,//sessionId
+                            token,
+                            extraInfo);
+        } else {
+            downloadTaskObservable = downloadManager
+                    .newPlaybackDownloadTask(fileName,
+                            videoId,
+                            0,//sessionId
+                            token,
+                            extraInfo,
+                            true,
+                            videoDefinitions);
+        }
+        Disposable d = downloadTaskObservable
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new Consumer<DownloadTask>() {
                     @Override
@@ -155,4 +183,7 @@ public final class VideoDownloadManager {
     }
 
 
+    public DownloadTask getDownloadTask(DownloadItem item) {
+        return downloadManager.getTaskByRoom(item.getVideoId(), 0);
+    }
 }

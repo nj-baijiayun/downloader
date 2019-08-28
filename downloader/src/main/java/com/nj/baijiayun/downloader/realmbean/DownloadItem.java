@@ -2,6 +2,7 @@ package com.nj.baijiayun.downloader.realmbean;
 
 import android.support.annotation.Nullable;
 
+import com.baijiayun.download.DownloadTask;
 import com.nj.baijiayun.downloader.listener.DownloadListener;
 import com.nj.baijiayun.downloader.utils.MD5Util;
 
@@ -91,40 +92,40 @@ public class DownloadItem extends RealmObject {
     private String sign;
     private long startTime;
 
-
     @Ignore
     int lastStatus = downloadStatus;
     @Ignore
     private DownloadListener downloadListener;
+    @Ignore
+    private boolean newListener;
 
-
-    public void update() {
-        if (lastStatus == DOWNLOAD_STATUS_WAITING && getDownloadStatus() != DOWNLOAD_STATUS_DOWNLOADING) {
-            if (downloadListener != null) {
+    /**
+     * @return isComplete
+     */
+    public boolean update() {
+        if (downloadListener != null) {
+            if (lastStatus == DOWNLOAD_STATUS_WAITING && getDownloadStatus() != DOWNLOAD_STATUS_DOWNLOADING) {
                 downloadListener.onStart(this);
             }
-        }
-        if (getDownloadStatus() == DOWNLOAD_STATUS_DOWNLOADING) {
-            if (downloadListener != null) {
+            if (getDownloadStatus() == DOWNLOAD_STATUS_DOWNLOADING) {
                 downloadListener.onProgressUpdate(this);
             }
-        }
-        if (getDownloadStatus() == DOWNLOAD_STATUS_STOP && lastStatus != DOWNLOAD_STATUS_STOP) {
-            if (downloadListener != null) {
+            if (getDownloadStatus() == DOWNLOAD_STATUS_STOP && lastStatus != DOWNLOAD_STATUS_STOP) {
                 downloadListener.onPause(this);
             }
-        }
-        if (getDownloadStatus() == DOWNLOAD_STATUS_ERROR && lastStatus != DOWNLOAD_STATUS_ERROR) {
-            if (downloadListener != null) {
+            if (getDownloadStatus() == DOWNLOAD_STATUS_ERROR && lastStatus != DOWNLOAD_STATUS_ERROR) {
                 downloadListener.onError(this);
             }
-        }
-        if (getDownloadStatus() == DOWNLOAD_STATUS_COMPLETE && lastStatus != DOWNLOAD_STATUS_COMPLETE) {
-            if (downloadListener != null) {
+            if ((getDownloadStatus() == DOWNLOAD_STATUS_COMPLETE && lastStatus != DOWNLOAD_STATUS_COMPLETE)|| newListener) {
+                newListener = false;
                 downloadListener.onComplete(this);
             }
         }
+        if (getDownloadStatus() == DOWNLOAD_STATUS_COMPLETE && lastStatus != DOWNLOAD_STATUS_COMPLETE ) {
+            return true;
+        }
         lastStatus = getDownloadStatus();
+        return false;
     }
 
     @Override
@@ -286,7 +287,7 @@ public class DownloadItem extends RealmObject {
                 key = uid + String.valueOf(fileType) + videoId + parent.parentId + itemId;
                 break;
             default:
-                key = uid + String.valueOf(fileType) + MD5Util.encrypt(fileUrl) + parent.parentId + itemId;
+                key = uid + String.valueOf(fileType) + MD5Util.encrypt(fileUrl) + (parent == null ? "0" : parent.parentId) + itemId;
                 break;
         }
     }
@@ -297,6 +298,12 @@ public class DownloadItem extends RealmObject {
 
     public void setStartTime(long startTime) {
         this.startTime = startTime;
+    }
+
+    public void setDownloadListener(DownloadListener downloadListener) {
+        this.newListener = true;
+        this.downloadListener = downloadListener;
+        update();
     }
 
     @Override

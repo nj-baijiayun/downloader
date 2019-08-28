@@ -18,10 +18,13 @@ allprojects {
     repositories {
         google()
         jcenter()
-        maven {
-            url = 'http://172.20.2.114:8081/repository/maven-releases/'
-        }
-        maven { url "https://raw.github.com/baijia/maven/master/" }
+//        maven {
+//            url = 'http://172.20.2.114:8081/repository/maven-releases/'
+//        }
+//        maven {
+//            url = 'http://172.20.2.114:8081/repository/maven-snapshots/'
+//        }
+        maven { url 'http://git.baijiashilian.com/open-android/maven/raw/master/' }
     }
 }
 

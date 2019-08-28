@@ -16,10 +16,10 @@ import io.realm.RealmResults;
 
 
 /**
+ * @author houyi QQ:1007362137
  * @project zywx_android
  * @class name：com.baijiayun.common_down.bean
  * @describe
- * @author houyi QQ:1007362137
  * @time 2019-06-04 17:32
  * @change
  * @time
@@ -59,7 +59,7 @@ public class DownloadRealmWrapper implements UpdateListener {
         return results.asFlowable();
     }
 
-    public List<DownloadItem> getOriginResults(){
+    public List<DownloadItem> getOriginResults() {
         return realm.copyFromRealm(results);
     }
 
@@ -75,16 +75,6 @@ public class DownloadRealmWrapper implements UpdateListener {
                 result.update();
             }
         }
-        if (onUpdateListener != null) {
-            onUpdateListener.updated();
-        }
     }
 
-    public void setOnUpdateListener(UpdateListener onUpdateListener) {
-        this.onUpdateListener = onUpdateListener;
-    }
-
-    public interface UpdateListener {
-        void updated();
-    }
 }

@@ -1,17 +1,21 @@
 package com.nj.baijiayun.downloader.request;
 
+import android.arch.lifecycle.LifecycleOwner;
 import android.text.TextUtils;
 
-import com.nj.baijiayun.logger.log.Logger;
+import com.baijiayun.constant.VideoDefinition;
+import com.nj.baijiayun.downloader.ListenerTracker;
+import com.nj.baijiayun.downloader.listener.DownloadListener;
 import com.nj.baijiayun.downloader.DownloadManager;
 import com.nj.baijiayun.downloader.RealmManager;
 import com.nj.baijiayun.downloader.realmbean.Chapter;
 import com.nj.baijiayun.downloader.realmbean.DownloadItem;
 import com.nj.baijiayun.downloader.realmbean.DownloadParent;
 
-import org.jetbrains.annotations.NotNull;
 
 import io.realm.Realm;
+
+import java.util.List;
 
 /**
  * @project zywx_android
@@ -38,29 +42,46 @@ public abstract class DownloadRequest {
     protected String itemId;
     protected String fileGenre;
     protected String token;
+    protected List<VideoDefinition> videoDefinitions;
+
 
     public DownloadRequest(DownloadManager.DownloadType type, String uid) {
         this.type = type;
         this.uid = uid;
     }
 
+    /**
+     * @see #start(LifecycleOwner, DownloadListener, boolean)
+     */
     public abstract void start();
+
+    /**
+     * @see #start(LifecycleOwner, DownloadListener, boolean)
+     */
+    public abstract ListenerTracker start(LifecycleOwner owner, DownloadListener downloadListener);
+
+    /**
+     * 开始下载，同时可以设置下载监听.
+     *
+     * @param autoFinish 是否需要自动销毁监听当文件下载完成，默认为true
+     * @return 下载监听的追踪器，用于结束监听或者检查监听是否存活
+     */
+    public abstract ListenerTracker start(LifecycleOwner owner, DownloadListener downloadListener, boolean autoFinish);
 
     /**
      * 保存到realm数据库
      */
     public DownloadItem saveToRealm() {
         final Realm realmInstance = RealmManager.getRealmInstance();
-        final DownloadItem item = new DownloadItem();
+        DownloadItem item = new DownloadItem();
         item.setFileType(type.value());
         item.setUid(uid);
-        item.setDownloadStatus(DownloadItem.DOWNLOAD_STATUS_WAITING);
         item.setItemId(itemId);
         item.setFileName(fileName);
         item.setVideoId(videoId);
         item.setFileUrl(url);
         item.setFileGenre(fileGenre);
-        item.setStartTime(System.currentTimeMillis()/1000);
+        item.setStartTime(System.currentTimeMillis() / 1000);
         setCustomParams(item);
         if (!TextUtils.isEmpty(parentId)) {
             DownloadParent parent = new DownloadParent();
@@ -78,23 +99,15 @@ public abstract class DownloadRequest {
             }
         }
         item.generateKey();
-        realmInstance.executeTransactionAsync(new Realm.Transaction() {
-            @Override
-            public void execute(@NotNull Realm realm) {
-                realm.insertOrUpdate(item);
-            }
-        }, new Realm.Transaction.OnSuccess() {
-            @Override
-            public void onSuccess() {
-                realmInstance.close();
-            }
-        }, new Realm.Transaction.OnError() {
-            @Override
-            public void onError(@NotNull Throwable error) {
-                Logger.e(error);
-            }
-        });
-
+        DownloadItem key = realmInstance.where(DownloadItem.class).equalTo("key", item.getKey()).findFirst();
+        if (key == null) {
+            realmInstance.beginTransaction();
+            realmInstance.insertOrUpdate(item);
+            realmInstance.commitTransaction();
+        } else {
+            item = realmInstance.copyFromRealm(key);
+        }
+        realmInstance.close();
         return item;
 
     }
@@ -202,5 +215,13 @@ public abstract class DownloadRequest {
         return this;
     }
 
-
+    /**
+     * 设置下载优先级
+     * @param videoDefinitions
+     * @return
+     */
+    public DownloadRequest setVideoDefinitions(List<VideoDefinition> videoDefinitions) {
+        this.videoDefinitions = videoDefinitions;
+        return this;
+    }
 }

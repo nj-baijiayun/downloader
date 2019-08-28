@@ -3,9 +3,12 @@ package com.nj.baijiayun.downloader.core;
 import android.arch.lifecycle.LifecycleOwner;
 
 import com.nj.baijiayun.downloader.DownloadManager;
+import com.nj.baijiayun.downloader.ListenerTracker;
 import com.nj.baijiayun.downloader.config.DownloadRealmWrapper;
+import com.nj.baijiayun.downloader.config.SingleRealmTracker;
 
 import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @project zywx_android
@@ -19,7 +22,7 @@ import java.util.HashMap;
  */
 public class UpdateDispatcher {
 
-    private HashMap<LifecycleOwner, LifecycleTracker> lifeBindTracker = new HashMap<>();
+    private ConcurrentHashMap<LifecycleOwner, LifecycleTracker> lifeBindTracker = new ConcurrentHashMap<>();
 
     /**
      * 分发集合变化比如新增下载，删除下载等
@@ -56,6 +59,16 @@ public class UpdateDispatcher {
         DownloadRealmWrapper listener = new DownloadRealmWrapper(DownloadManager.getCurrentUid(),courseId, downloadTypes,downloadStatus);
         lifecycleTracker.add(listener);
         return listener;
+    }
+
+    public void registerSingleListener(LifecycleOwner lifecycleOwner, SingleRealmTracker tracker) {
+        LifecycleTracker lifecycleTracker = lifeBindTracker.get(lifecycleOwner);
+        if (lifecycleTracker == null) {
+            lifecycleTracker = new LifecycleTracker(lifecycleOwner, lifeBindTracker);
+            lifeBindTracker.put(lifecycleOwner, lifecycleTracker);
+        }
+        tracker.begin(lifecycleTracker);
+        lifecycleTracker.add(tracker);
     }
 
 }

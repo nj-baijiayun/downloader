@@ -126,4 +126,8 @@ DownloadManager.resumeDownload(DownloadItem item);
 ```java
 DownloadManager.delete(List<DownloadItem> items);
 ```
-
+## TODO
+* 使用范型类表示下载状态
+* 下载单回掉
+* parentId文件下载类型非必需 
+* 替换下载库

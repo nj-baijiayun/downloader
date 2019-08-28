@@ -1,12 +1,16 @@
 package com.nj.baijiayun.downloader.request;
 
+import android.arch.lifecycle.LifecycleOwner;
 import android.text.TextUtils;
 
 import com.arialyy.aria.core.download.DownloadTask;
 import com.nj.baijiayun.downloader.DownloadManager;
+import com.nj.baijiayun.downloader.ListenerTracker;
 import com.nj.baijiayun.downloader.adapter.FileDownloadAdapter;
+import com.nj.baijiayun.downloader.config.SingleRealmTracker;
 import com.nj.baijiayun.downloader.core.FileDownloadManager;
 import com.nj.baijiayun.downloader.core.UpdateProcessor;
+import com.nj.baijiayun.downloader.listener.DownloadListener;
 import com.nj.baijiayun.downloader.realmbean.DownloadItem;
 
 
@@ -42,14 +46,21 @@ public class FileDownloadRequest extends DownloadRequest {
 
     @Override
     public void start() {
+        start(null, null);
+    }
+
+    @Override
+    public ListenerTracker start(LifecycleOwner owner, DownloadListener downloadListener) {
+        return start(owner, downloadListener, true);
+    }
+
+    @Override
+    public ListenerTracker start(final LifecycleOwner owner, final DownloadListener downloadListener, boolean autoFinish) {
         if (TextUtils.isEmpty(url)) {
             throw new MissingArgumentException("missing argument url or url is null");
         }
         if (TextUtils.isEmpty(fileName)) {
             throw new MissingArgumentException("missing argument fileName or fileName is null");
-        }
-        if (TextUtils.isEmpty(parentId)) {
-            throw new MissingArgumentException("missing argument parentId or parentId is null");
         }
         if (TextUtils.isEmpty(fileGenre)) {
             throw new MissingArgumentException("missing argument fileGenre or fileGenre is null");
@@ -63,12 +74,19 @@ public class FileDownloadRequest extends DownloadRequest {
             }
         }
         final DownloadItem downloadItem = saveToRealm();
+        SingleRealmTracker tracker = null;
+        if (owner != null && downloadListener != null) {
+            tracker = new SingleRealmTracker(downloadItem.key, downloadListener, autoFinish);
+            updateProcessor.beginTracker(tracker, owner);
+        }
         fileDownloadManager.downloadFile(parentId, url, fileName, fileGenre, new FileDownloadManager.FileOpenCallBack() {
             @Override
             public void onTaskStart(DownloadTask task) {
                 updateProcessor.newTask(downloadItem, task.getEntity());
             }
+
         });
+        return tracker;
     }
 
     @Override
