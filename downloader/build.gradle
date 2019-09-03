@@ -44,7 +44,7 @@ dependencies {
     compileOnly "com.android.support:appcompat-v7:28.0.0"
     //androidX之前的最后一个版本
     implementation "android.arch.lifecycle:runtime:1.0.3"
-    implementation 'com.baijia.player:VideoplayerCore:2.0.5.3'
+    implementation 'com.baijia.player:VideoplayerCore:2.0.5.4'
     implementation 'com.arialyy.aria:aria-core:3.6.4'
     annotationProcessor 'com.arialyy.aria:aria-compiler:3.6.4'
     compileOnly "com.nj.baijiayun:logger:1.0.5"
