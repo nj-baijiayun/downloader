@@ -10,6 +10,7 @@ import com.arialyy.aria.orm.annotation.NoNull;
 import com.baijiayun.download.DownloadModel;
 import com.baijiayun.download.DownloadTask;
 import com.baijiayun.download.constant.DownloadType;
+import com.baijiayun.videoplayer.bean.VideoItem;
 import com.nj.baijiayun.downloader.ListenerTracker;
 import com.nj.baijiayun.downloader.config.SingleRealmTracker;
 import com.nj.baijiayun.logger.log.Logger;
@@ -87,9 +88,11 @@ public class UpdateProcessor implements UpdateController {
             for (DownloadItem videoItem : videoItems) {
                 for (DownloadTask videoTask : videoTasks) {
                     //判断类型是否相同
-                    boolean isPlayBack = videoItem.getFileType() == DownloadItem.FILE_TYPE_PLAY_BACK
+                    boolean isPlayBack = (videoItem.getFileType() == DownloadItem.FILE_TYPE_PLAY_BACK ||
+                            videoItem.getFileType() == DownloadItem.FILE_TYPE_PLAY_BACK_SMALL)
                             && videoTask.getDownloadType() == DownloadType.Playback;
-                    boolean isFileType = videoItem.getFileType() == DownloadItem.FILE_TYPE_VIDEO
+                    boolean isFileType = (videoItem.getFileType() == DownloadItem.FILE_TYPE_VIDEO ||
+                            videoItem.getFileType() == DownloadItem.FILE_TYPE_VIDEO_AUDIO)
                             && videoTask.getDownloadType() == DownloadType.Video;
                     if (isPlayBack || isFileType) {
                         if (videoItem.getVideoId() == videoTask.getVideoDownloadInfo().roomId) {
@@ -164,7 +167,8 @@ public class UpdateProcessor implements UpdateController {
                 .equalTo("uid", uid)
                 .and()
                 .in("fileType", new Integer[]{DownloadItem.FILE_TYPE_PLAY_BACK
-                        , DownloadItem.FILE_TYPE_VIDEO})
+                        , DownloadItem.FILE_TYPE_VIDEO, DownloadItem.FILE_TYPE_PLAY_BACK_SMALL,
+                        DownloadItem.FILE_TYPE_VIDEO_AUDIO})
                 .findAll()
                 .sort("downloadStatus", Sort.ASCENDING);
 

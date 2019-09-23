@@ -37,16 +37,19 @@ public class DownloadManager {
      */
     public enum DownloadType {
         /**
-         * 1:课件文件，2:文库文件，3:回放视频，4:点播视频,5:图文课程,6文件视频（阿里云或其他途径）
+         * 1:课件文件，2:文库文件，3:普通回放视频,31:小班课回放，4:点播视频,41:点播音频,5:图文课程,6文件视频（阿里云或其他途径）
          * 7:音频文件
          */
         TYPE_COURSE_WAVE(1),
         TYPE_LIBRARY(2),
         TYPE_PLAY_BACK(3),
+        TYPE_PLAY_BACK_SMALL(31),
         TYPE_VIDEO(4),
+        TYPE_VIDEO_AUDIO(41),
         TYPE_FILE_GRAPHIC(5),
         TYPE_FILE_VIDEO(6),
-        TYPE_FILE_AUDIO(7);
+        TYPE_FILE_AUDIO(7),
+        TYPE_CUSTOM(8);
 
         private final int type;
 
@@ -74,14 +77,20 @@ public class DownloadManager {
                     return TYPE_LIBRARY;
                 case 3:
                     return TYPE_PLAY_BACK;
+                case 31:
+                    return TYPE_PLAY_BACK_SMALL;
                 case 4:
                     return TYPE_VIDEO;
+                case 41:
+                    return TYPE_VIDEO_AUDIO;
                 case 5:
                     return TYPE_FILE_GRAPHIC;
                 case 6:
                     return TYPE_FILE_VIDEO;
                 case 7:
                     return TYPE_FILE_AUDIO;
+                case 8:
+                    return TYPE_CUSTOM;
                 default:
                     throw new IllegalArgumentException("no this type " + type);
             }
@@ -208,7 +217,7 @@ public class DownloadManager {
     }
 
     private void notifyUidChanged() {
-        videoDownloadManager.updateDownloadPath(config.getUid(),config.getVideoPath());
+        videoDownloadManager.updateDownloadPath(config.getUid(), config.getVideoPath());
         fileDownloadManager.updateFilePath(config.getFilePath());
         updateProcessor.updateUid(config.getUid());
     }

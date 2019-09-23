@@ -22,16 +22,19 @@ import io.realm.annotations.PrimaryKey;
  */
 public class DownloadItem extends RealmObject {
     /**
-     * 1:课件文件，2:文库文件，3:回放视频，4:点播视频,5:图文课程,6文件视频（阿里云或其他途径）
+     * 1:课件文件，2:文库文件，3:回放视频，4:点播，41:点播视频，42:点播音频,5:图文课程,6文件视频（阿里云或其他途径）
      * 7:音频文件
      */
     public static final int FILE_TYPE_COURSE_WAVE = 1;
     public static final int FILE_TYPE_LIBRARY = 2;
     public static final int FILE_TYPE_PLAY_BACK = 3;
+    public static final int FILE_TYPE_PLAY_BACK_SMALL = 31;
     public static final int FILE_TYPE_VIDEO = 4;
+    public static final int FILE_TYPE_VIDEO_AUDIO = 41;
     public static final int FILE_TYPE_FILE_COURSE = 5;
     public static final int FILE_TYPE_FILE_VIDEO = 6;
     public static final int FILE_TYPE_FILE_AUDIO = 7;
+    public static final int FILE_TYPE_CUSTOM = 8;
 
     public static final int DOWNLOAD_STATUS_COMPLETE = 1;
     public static final int DOWNLOAD_STATUS_DOWNLOADING = 2;
@@ -116,12 +119,12 @@ public class DownloadItem extends RealmObject {
             if (getDownloadStatus() == DOWNLOAD_STATUS_ERROR && lastStatus != DOWNLOAD_STATUS_ERROR) {
                 downloadListener.onError(this);
             }
-            if ((getDownloadStatus() == DOWNLOAD_STATUS_COMPLETE && lastStatus != DOWNLOAD_STATUS_COMPLETE)|| newListener) {
+            if ((getDownloadStatus() == DOWNLOAD_STATUS_COMPLETE && lastStatus != DOWNLOAD_STATUS_COMPLETE) || newListener) {
                 newListener = false;
                 downloadListener.onComplete(this);
             }
         }
-        if (getDownloadStatus() == DOWNLOAD_STATUS_COMPLETE && lastStatus != DOWNLOAD_STATUS_COMPLETE ) {
+        if (getDownloadStatus() == DOWNLOAD_STATUS_COMPLETE && lastStatus != DOWNLOAD_STATUS_COMPLETE) {
             return true;
         }
         lastStatus = getDownloadStatus();

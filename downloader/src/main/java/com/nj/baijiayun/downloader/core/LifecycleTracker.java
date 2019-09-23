@@ -6,9 +6,7 @@ import android.arch.lifecycle.LifecycleOwner;
 import android.arch.lifecycle.OnLifecycleEvent;
 
 import com.nj.baijiayun.downloader.listener.UpdateListener;
-import org.apache.commons.compress.utils.Sets;
 
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -19,7 +17,7 @@ public class LifecycleTracker implements LifecycleObserver {
     private Map<LifecycleOwner, LifecycleTracker> lifeTracker;
     private Set<UpdateListener> listeners = new CopyOnWriteArraySet<>();
     private boolean isEnable = true;
-    private volatile boolean inDestorying;
+    private volatile boolean isDestoryed = false;
 
     public LifecycleTracker(LifecycleOwner owner, Map<LifecycleOwner, LifecycleTracker> lifeTracker) {
         owner.getLifecycle().addObserver(this);
@@ -45,11 +43,14 @@ public class LifecycleTracker implements LifecycleObserver {
 
     @OnLifecycleEvent(Lifecycle.Event.ON_DESTROY)
     public void destroy() {
-        isEnable = false;
-        lifeTracker.remove(owner);
-        unbind();
-        listeners.clear();
-        owner = null;
+        if (!isDestoryed) {
+            isDestoryed = true;
+            isEnable = false;
+            lifeTracker.remove(owner);
+            owner = null;
+            unbind();
+            listeners.clear();
+        }
     }
 
     private void unbind() {

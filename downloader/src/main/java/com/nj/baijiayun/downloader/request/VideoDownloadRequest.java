@@ -71,15 +71,10 @@ public class VideoDownloadRequest extends DownloadRequest {
             tracker = new SingleRealmTracker(item.getKey(), downloadListener, autoFinish);
             updateProcessor.beginTracker(tracker, owner);
         }
-        if (type == DownloadManager.DownloadType.TYPE_PLAY_BACK) {
-            if (videoDefinitions != null) {
-                for (VideoDefinition videoDefinition : videoDefinitions) {
-
-                }
-            }
-            videoDownloadManager.downloadPlayBack(fileName, videoId, token, getExtraInfo(), item, updateProcessor,videoDefinitions);
-        } else if (type == DownloadManager.DownloadType.TYPE_VIDEO) {
-            videoDownloadManager.downloadVideo(fileName, videoId, token, getExtraInfo(), item, updateProcessor,videoDefinitions);
+        if (type == DownloadManager.DownloadType.TYPE_PLAY_BACK || type == DownloadManager.DownloadType.TYPE_PLAY_BACK_SMALL) {
+            videoDownloadManager.downloadPlayBack(fileName, videoId, token, getExtraInfo(), item, updateProcessor, videoDefinitions);
+        } else if (type == DownloadManager.DownloadType.TYPE_VIDEO || type == DownloadManager.DownloadType.TYPE_VIDEO_AUDIO) {
+            videoDownloadManager.downloadVideo(fileName, videoId, token, getExtraInfo(), item, updateProcessor, videoDefinitions);
         }
         return tracker;
     }
