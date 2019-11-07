@@ -1,7 +1,7 @@
 package com.nj.baijiayun.downloader.core;
 
 import android.support.annotation.Keep;
-
+import android.support.annotation.LongDef;
 import com.arialyy.annotations.Download;
 import com.arialyy.aria.core.Aria;
 import com.arialyy.aria.core.download.DownloadEntity;
@@ -14,10 +14,10 @@ import java.util.HashMap;
 import java.util.List;
 
 /**
+ * @author houyi QQ:1007362137
  * @project zywx_android
  * @class name：com.baijiayun.zywx.module_library
  * @describe
- * @author houyi QQ:1007362137
  * @time 2019/01/02 10:20
  * @change
  * @timed
@@ -73,7 +73,7 @@ public class FileDownloadManager {
     }
 
     public String getFilePath(String parentId, String url, String fileName, String genre) {
-        return filePath +   parentId + "/" + MD5Util.encrypt(url) + "/" + fileName + "." + genre;
+        return filePath + parentId + "/" + MD5Util.encrypt(url) + "/" + fileName + "." + genre;
     }
 
 
@@ -86,8 +86,62 @@ public class FileDownloadManager {
         }
     }
 
+    @Keep
+    @Download.onTaskRunning
+    void running(DownloadTask task) {
+        updateEntity(task);
+    }
+
+    private void updateEntity(DownloadTask task) {
+        DownloadEntity downloadEntity = task.getDownloadEntity();
+        for (DownloadEntity current : allTasks) {
+            if (current.getKey().equals(downloadEntity.getKey())) {
+                current.setSpeed(downloadEntity.getSpeed());
+                current.setCurrentProgress(downloadEntity.getCurrentProgress());
+                current.setFileSize(downloadEntity.getFileSize());
+                current.setState(downloadEntity.getState());
+                return;
+            }
+        }
+    }
+
+    @Keep
+    @Download.onTaskComplete
+    protected void taskComplete(DownloadTask task) {
+        updateEntity(task);
+    }
+
+    @Keep
+    @Download.onTaskResume
+    protected void taskResume(DownloadTask task) {
+        updateEntity(task);
+    }
+
+
+    @Keep
+    @Download.onTaskStop
+    protected void taskStop(DownloadTask task) {
+        updateEntity(task);
+    }
+
+    @Keep
+    @Download.onWait
+    protected void onWait(DownloadTask task) {
+        updateEntity(task);
+    }
+
+    @Keep
+    @Download.onTaskFail
+    protected void taskFail(DownloadTask task) {
+        updateEntity(task);
+    }
+
     public List<DownloadEntity> getDownloadingTasks() {
         return downloadingTasks;
+    }
+
+    public DownloadEntity getDownloadingTask(DownloadEntity entity) {
+       return getDownload(this).getDownloadEntity(entity.getUrl());
     }
 
     public void delete(DownloadEntity remove) {
@@ -99,8 +153,7 @@ public class FileDownloadManager {
     }
 
     public void resumeDownload(DownloadEntity item) {
-        String url = item.getUrl();
-        getDownload(this).load(url).setFilePath(item.getDownloadPath()).start();
+        getDownload(this).load(item).start();
     }
 
     public abstract static class FileOpenCallBack<T> {

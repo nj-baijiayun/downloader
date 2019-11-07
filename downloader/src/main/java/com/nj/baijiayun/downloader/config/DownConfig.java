@@ -37,6 +37,10 @@ public class DownConfig {
         return new File(videoPath, uid).getAbsolutePath() + "/";
     }
 
+    public String getVideoCustomDomain() {
+        return videoCustomDomain;
+    }
+
     public static class Builder {
         private Context context;
         private String filePath;

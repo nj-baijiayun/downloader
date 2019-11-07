@@ -3,31 +3,24 @@ package com.nj.baijiayun.downloader.core;
 import android.arch.lifecycle.LifecycleOwner;
 import android.os.Handler;
 import android.os.Message;
-
 import android.support.annotation.NonNull;
 import com.arialyy.aria.core.download.DownloadEntity;
-import com.arialyy.aria.orm.annotation.NoNull;
 import com.baijiayun.download.DownloadModel;
 import com.baijiayun.download.DownloadTask;
 import com.baijiayun.download.constant.DownloadType;
-import com.baijiayun.videoplayer.bean.VideoItem;
-import com.nj.baijiayun.downloader.ListenerTracker;
-import com.nj.baijiayun.downloader.config.SingleRealmTracker;
-import com.nj.baijiayun.logger.log.Logger;
 import com.nj.baijiayun.downloader.RealmManager;
 import com.nj.baijiayun.downloader.adapter.FileDownloadAdapter;
 import com.nj.baijiayun.downloader.adapter.VideoDownloadAdapter;
+import com.nj.baijiayun.downloader.config.SingleRealmTracker;
 import com.nj.baijiayun.downloader.realmbean.DownloadItem;
 import com.nj.baijiayun.downloader.utils.VideoDownloadUtils;
-
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-
+import com.nj.baijiayun.logger.log.Logger;
 import io.realm.Realm;
 import io.realm.RealmResults;
 import io.realm.Sort;
+
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author houyi QQ:1007362137
@@ -160,6 +153,20 @@ public class UpdateProcessor implements UpdateController {
                 .findAll();
     }
 
+    private RealmResults<DownloadItem> getAllDirtyOrDownloadingItems(String uid, Realm realm) {
+        return realm
+                .where(DownloadItem.class)
+                .equalTo("uid", uid)
+                .and()
+                .beginGroup()
+                .equalTo("dirty", true)
+                .or()
+                .in("downloadStatus", new Integer[]{DownloadItem.DOWNLOAD_STATUS_DOWNLOADING
+                        , DownloadItem.DOWNLOAD_STATUS_STOP, DownloadItem.DOWNLOAD_STATUS_WAITING})
+                .endGroup()
+                .findAll();
+    }
+
 
     private RealmResults<DownloadItem> getAllVideoDownloadItems(String uid) {
         return realm
@@ -180,13 +187,13 @@ public class UpdateProcessor implements UpdateController {
             @Override
             public void execute(@NonNull Realm realm) {
                 synchronized (UpdateProcessor.this) {
-                    RealmResults<DownloadItem> allDownloadingItems = getAllDownloadingItems(uid, realm);
+                    boolean isAlive = false;
+                    RealmResults<DownloadItem> allDownloadingItems = getAllDirtyOrDownloadingItems(uid, realm);
                     if (allDownloadingItems.size() == 0) {
                         liveBeatsDecrease();
                         Logger.d("update when there is" + allDownloadingItems.size() + " downloading items  ");
                         return;
                     }
-                    boolean isAlive = false;
                     for (DownloadItem next : allDownloadingItems) {
                         if (next.getDownloadStatus() == DownloadItem.DOWNLOAD_STATUS_COMPLETE || next.getDownloadStatus() == DownloadItem.DOWNLOAD_STATUS_ERROR) {
                             continue;
@@ -194,13 +201,7 @@ public class UpdateProcessor implements UpdateController {
                         if (next.getDownloadStatus() != DownloadItem.DOWNLOAD_STATUS_STOP) {
                             isAlive = true;
                         }
-                        Object o = downloadMap.get(next);
-                        if (o instanceof DownloadEntity) {
-                            updateFileTask(next, (DownloadEntity) o);
-                        } else if (o instanceof DownloadTask) {
-                            updateBjyVideoTask(next, (DownloadTask) o);
-
-                        }
+                        updateItem(next);
                     }
                     if (!isAlive) {
                         liveBeatsDecrease();
@@ -216,6 +217,16 @@ public class UpdateProcessor implements UpdateController {
         infoUpdateHandler.sendEmptyMessageDelayed(MSG_VIDEO_INFO_UPDATE, 1000);
 
 
+    }
+
+    private void updateItem(DownloadItem next) {
+        Object o = downloadMap.get(next);
+        if (o instanceof DownloadEntity) {
+            updateFileTask(next, (DownloadEntity) o);
+        } else if (o instanceof DownloadTask) {
+            updateBjyVideoTask(next, (DownloadTask) o);
+
+        }
     }
 
     private void liveBeatsDecrease() {
@@ -246,7 +257,11 @@ public class UpdateProcessor implements UpdateController {
             next.setSign(videoDownloadInfo.targetFolder + "/" + o.getSignalFileName());
             next.setDuration(videoDownloadInfo.videoDuration);
         }
+        int preStatus = next.getDownloadStatus();
         next.setDownloadStatus(downloadStatus);
+        if (preStatus != next.getDownloadStatus() && next.isDirty() && next.getDownloadStatus() != DownloadItem.DOWNLOAD_STATUS_WAITING) {
+            next.setDirty(false);
+        }
     }
 
     private void updateFileTask(DownloadItem next, DownloadEntity o) {
@@ -256,7 +271,11 @@ public class UpdateProcessor implements UpdateController {
         Logger.d("currentSize:" + VideoDownloadUtils.getFormatSize(next.getCurrentSize())
                 + " currentSpeed:" + VideoDownloadUtils.getFormatSize(next.getDownloadSpeed())
                 + " fileSize:" + VideoDownloadUtils.getFormatSize(next.getFileSize()));
+        int preStatus = next.getDownloadStatus();
         next.setDownloadStatus(fileDownloadAdapter.adapterDownloadStatus(o.getState()));
+        if (preStatus != next.getDownloadStatus() && next.isDirty() && next.getDownloadStatus() != DownloadItem.DOWNLOAD_STATUS_WAITING) {
+            next.setDirty(false);
+        }
     }
 
     /**
@@ -329,13 +348,16 @@ public class UpdateProcessor implements UpdateController {
     /**
      * 恢复单个下载任务
      */
-    public void resumeDownload(DownloadItem item) {
+    public void resumeDownload(final DownloadItem item) {
         Object object = downloadMap.get(item);
         if (object instanceof DownloadEntity) {
             fileDownloadManager.resumeDownload(((DownloadEntity) object));
         } else if (object instanceof DownloadTask) {
             videoDownloadManager.resumeDownload((DownloadTask) object);
         }
+        RealmManager.getRealmInstance().beginTransaction();
+        item.setDirty(true);
+        RealmManager.getRealmInstance().commitTransaction();
         checkToResumeProcessor();
     }
 

@@ -184,6 +184,10 @@ public final class VideoDownloadManager {
 
 
     public DownloadTask getDownloadTask(DownloadItem item) {
-        return downloadManager.getTaskByRoom(item.getVideoId(), 0);
+        if(item.isPlayBack()) {
+            return downloadManager.getTaskByRoom(item.getVideoId(), 0);
+        }else{
+            return downloadManager.getTaskByVideoId(item.getVideoId());
+        }
     }
 }

@@ -4,11 +4,9 @@ import android.app.Application;
 import android.arch.lifecycle.LifecycleOwner;
 import android.content.ComponentCallbacks2;
 import android.content.res.Configuration;
-
 import com.arialyy.aria.core.Aria;
 import com.baijiayun.BJYPlayerSDK;
 import com.baijiayun.download.DownloadTask;
-import com.nj.baijiayun.logger.log.Logger;
 import com.nj.baijiayun.downloader.adapter.FileDownloadAdapter;
 import com.nj.baijiayun.downloader.adapter.VideoDownloadAdapter;
 import com.nj.baijiayun.downloader.config.DownConfig;
@@ -21,6 +19,7 @@ import com.nj.baijiayun.downloader.realmbean.DownloadItem;
 import com.nj.baijiayun.downloader.request.DownloadRequest;
 import com.nj.baijiayun.downloader.request.FileDownloadRequest;
 import com.nj.baijiayun.downloader.request.VideoDownloadRequest;
+import com.nj.baijiayun.logger.log.Logger;
 
 import java.util.List;
 
@@ -195,8 +194,11 @@ public class DownloadManager {
             }
         });
         init = true;
-        new BJYPlayerSDK.Builder((Application) downConfig.getContext())
-                .setDevelopMode(false)
+        BJYPlayerSDK.Builder builder = new BJYPlayerSDK.Builder((Application) downConfig.getContext());
+        if (downConfig.getVideoCustomDomain() != null) {
+            builder.setCustomDomain(downConfig.getVideoCustomDomain());
+        }
+        builder.setDevelopMode(false)
                 .setEncrypt(true)
                 .build();
         config = downConfig;
@@ -254,7 +256,9 @@ public class DownloadManager {
     private DownloadRequest makeRequest(DownloadType type) {
         switch (type) {
             case TYPE_VIDEO:
+            case TYPE_VIDEO_AUDIO:
             case TYPE_PLAY_BACK:
+            case TYPE_PLAY_BACK_SMALL:
                 return new VideoDownloadRequest(type, config.getUid(), updateProcessor, videoDownloadManager, videoDownloadAdapter);
             default:
                 return new FileDownloadRequest(type, config.getUid(), updateProcessor, fileDownloadManager, fileDownloadAdapter);

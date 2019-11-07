@@ -22,11 +22,11 @@ allprojects {
 在dependencies下添加依赖
 ```
 dependencies {
-    //当前最新版本为1.0.0
-    implementation 'com.nj.baijiayun:downloader:1.0.0'
+    //当前最新版本为1.0.3
+    implementation 'com.nj.baijiayun:downloader:1.0.03
 }
 ```
-当前最新版本为1.0.0 [版本说明](./changelog.md)
+当前最新版本为1.0.3
 
 
 ## 使用说明

@@ -1,11 +1,8 @@
 package com.nj.baijiayun.downloader.realmbean;
 
 import android.support.annotation.Nullable;
-
-import com.baijiayun.download.DownloadTask;
 import com.nj.baijiayun.downloader.listener.DownloadListener;
 import com.nj.baijiayun.downloader.utils.MD5Util;
-
 import io.realm.RealmObject;
 import io.realm.annotations.Ignore;
 import io.realm.annotations.PrimaryKey;
@@ -94,6 +91,7 @@ public class DownloadItem extends RealmObject {
     private long duration = 0;
     private String sign;
     private long startTime;
+    private boolean dirty = false;
 
     @Ignore
     int lastStatus = downloadStatus;
@@ -332,6 +330,14 @@ public class DownloadItem extends RealmObject {
                 '}';
     }
 
+    public boolean isDirty() {
+        return dirty;
+    }
+
+    public void setDirty(boolean dirty) {
+        this.dirty = dirty;
+    }
+
     public String getSign() {
         return sign;
     }
@@ -345,5 +351,10 @@ public class DownloadItem extends RealmObject {
             return 0;
         }
         return (int) (getCurrentSize() * 100 / getFileSize());
+    }
+
+    public boolean isPlayBack() {
+        int fileType = getFileType();
+        return fileType == FILE_TYPE_PLAY_BACK || fileType == FILE_TYPE_PLAY_BACK_SMALL;
     }
 }
