@@ -91,7 +91,6 @@ public class DownloadItem extends RealmObject {
     private long duration = 0;
     private String sign;
     private long startTime;
-    private boolean dirty = false;
 
     @Ignore
     int lastStatus = downloadStatus;
@@ -328,14 +327,6 @@ public class DownloadItem extends RealmObject {
                 ", lastStatus=" + lastStatus +
                 ", downloadListener=" +
                 '}';
-    }
-
-    public boolean isDirty() {
-        return dirty;
-    }
-
-    public void setDirty(boolean dirty) {
-        this.dirty = dirty;
     }
 
     public String getSign() {

@@ -1,13 +1,14 @@
 package com.nj.baijiayun.downloader.core;
 
 import android.support.annotation.Keep;
-import android.support.annotation.LongDef;
+
 import com.arialyy.annotations.Download;
 import com.arialyy.aria.core.Aria;
 import com.arialyy.aria.core.download.DownloadEntity;
 import com.arialyy.aria.core.download.DownloadReceiver;
 import com.arialyy.aria.core.download.DownloadTask;
 import com.nj.baijiayun.downloader.utils.MD5Util;
+import com.nj.baijiayun.logger.log.Logger;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -93,6 +94,9 @@ public class FileDownloadManager {
     }
 
     private void updateEntity(DownloadTask task) {
+        if (allTasks == null) {
+            return;
+        }
         DownloadEntity downloadEntity = task.getDownloadEntity();
         for (DownloadEntity current : allTasks) {
             if (current.getKey().equals(downloadEntity.getKey())) {
@@ -100,6 +104,7 @@ public class FileDownloadManager {
                 current.setCurrentProgress(downloadEntity.getCurrentProgress());
                 current.setFileSize(downloadEntity.getFileSize());
                 current.setState(downloadEntity.getState());
+                Logger.d("update DownloadEntity" + current.toString());
                 return;
             }
         }
@@ -141,7 +146,7 @@ public class FileDownloadManager {
     }
 
     public DownloadEntity getDownloadingTask(DownloadEntity entity) {
-       return getDownload(this).getDownloadEntity(entity.getUrl());
+        return getDownload(this).getDownloadEntity(entity.getUrl());
     }
 
     public void delete(DownloadEntity remove) {

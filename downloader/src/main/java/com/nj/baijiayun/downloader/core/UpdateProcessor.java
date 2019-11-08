@@ -4,6 +4,7 @@ import android.arch.lifecycle.LifecycleOwner;
 import android.os.Handler;
 import android.os.Message;
 import android.support.annotation.NonNull;
+
 import com.arialyy.aria.core.download.DownloadEntity;
 import com.baijiayun.download.DownloadModel;
 import com.baijiayun.download.DownloadTask;
@@ -15,12 +16,13 @@ import com.nj.baijiayun.downloader.config.SingleRealmTracker;
 import com.nj.baijiayun.downloader.realmbean.DownloadItem;
 import com.nj.baijiayun.downloader.utils.VideoDownloadUtils;
 import com.nj.baijiayun.logger.log.Logger;
-import io.realm.Realm;
-import io.realm.RealmResults;
-import io.realm.Sort;
 
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+
+import io.realm.Realm;
+import io.realm.RealmResults;
+import io.realm.Sort;
 
 /**
  * @author houyi QQ:1007362137
@@ -31,7 +33,8 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class UpdateProcessor implements UpdateController {
     private static final int MSG_VIDEO_INFO_UPDATE = 1;
-    private static final int DEFAULT_LIVE = 2;
+    //文件下载恢复速度比较慢，心跳次数要增加
+    private static final int DEFAULT_LIVE = 6;
     public final Realm realm;
     private final FileDownloadManager fileDownloadManager;
     private final UpdateDispatcher updateDispatcher;
@@ -160,9 +163,6 @@ public class UpdateProcessor implements UpdateController {
                 .and()
                 .beginGroup()
                 .equalTo("dirty", true)
-                .or()
-                .in("downloadStatus", new Integer[]{DownloadItem.DOWNLOAD_STATUS_DOWNLOADING
-                        , DownloadItem.DOWNLOAD_STATUS_STOP, DownloadItem.DOWNLOAD_STATUS_WAITING})
                 .endGroup()
                 .findAll();
     }
@@ -176,6 +176,7 @@ public class UpdateProcessor implements UpdateController {
                 .in("fileType", new Integer[]{DownloadItem.FILE_TYPE_PLAY_BACK
                         , DownloadItem.FILE_TYPE_VIDEO, DownloadItem.FILE_TYPE_PLAY_BACK_SMALL,
                         DownloadItem.FILE_TYPE_VIDEO_AUDIO})
+
                 .findAll()
                 .sort("downloadStatus", Sort.ASCENDING);
 
@@ -188,7 +189,7 @@ public class UpdateProcessor implements UpdateController {
             public void execute(@NonNull Realm realm) {
                 synchronized (UpdateProcessor.this) {
                     boolean isAlive = false;
-                    RealmResults<DownloadItem> allDownloadingItems = getAllDirtyOrDownloadingItems(uid, realm);
+                    RealmResults<DownloadItem> allDownloadingItems = getAllDownloadingItems(uid, realm);
                     if (allDownloadingItems.size() == 0) {
                         liveBeatsDecrease();
                         Logger.d("update when there is" + allDownloadingItems.size() + " downloading items  ");
@@ -257,25 +258,19 @@ public class UpdateProcessor implements UpdateController {
             next.setSign(videoDownloadInfo.targetFolder + "/" + o.getSignalFileName());
             next.setDuration(videoDownloadInfo.videoDuration);
         }
-        int preStatus = next.getDownloadStatus();
         next.setDownloadStatus(downloadStatus);
-        if (preStatus != next.getDownloadStatus() && next.isDirty() && next.getDownloadStatus() != DownloadItem.DOWNLOAD_STATUS_WAITING) {
-            next.setDirty(false);
-        }
     }
 
     private void updateFileTask(DownloadItem next, DownloadEntity o) {
         next.setCurrentSize(o.getCurrentProgress());
         next.setDownloadSpeed(o.getSpeed());
         next.setFileSize(o.getFileSize());
+
+        next.setDownloadStatus(fileDownloadAdapter.adapterDownloadStatus(o.getState()));
         Logger.d("currentSize:" + VideoDownloadUtils.getFormatSize(next.getCurrentSize())
                 + " currentSpeed:" + VideoDownloadUtils.getFormatSize(next.getDownloadSpeed())
-                + " fileSize:" + VideoDownloadUtils.getFormatSize(next.getFileSize()));
-        int preStatus = next.getDownloadStatus();
-        next.setDownloadStatus(fileDownloadAdapter.adapterDownloadStatus(o.getState()));
-        if (preStatus != next.getDownloadStatus() && next.isDirty() && next.getDownloadStatus() != DownloadItem.DOWNLOAD_STATUS_WAITING) {
-            next.setDirty(false);
-        }
+                + " fileSize:" + VideoDownloadUtils.getFormatSize(next.getFileSize())
+                + " status:" + next.getDownloadStatus());
     }
 
     /**
@@ -355,9 +350,6 @@ public class UpdateProcessor implements UpdateController {
         } else if (object instanceof DownloadTask) {
             videoDownloadManager.resumeDownload((DownloadTask) object);
         }
-        RealmManager.getRealmInstance().beginTransaction();
-        item.setDirty(true);
-        RealmManager.getRealmInstance().commitTransaction();
         checkToResumeProcessor();
     }
 
