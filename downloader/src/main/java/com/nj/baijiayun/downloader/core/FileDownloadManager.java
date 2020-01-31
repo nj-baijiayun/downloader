@@ -161,6 +161,19 @@ public class FileDownloadManager {
         getDownload(this).load(item).start();
     }
 
+    public void restartAll() {
+        for (DownloadEntity entity : getDownload(this).getAllCompleteTask()) {
+            if (entity.getState() == DownloadEntity.STATE_FAIL) {
+                getDownload(this).load(entity).reStart();
+            }
+        }
+        getDownload(this).resumeAllTask();
+    }
+
+    public void pauseAll() {
+        getDownload(this).stopAllTask();
+    }
+
     public abstract static class FileOpenCallBack<T> {
 
         public abstract void onTaskStart(DownloadTask task);

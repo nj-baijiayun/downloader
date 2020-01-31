@@ -2,17 +2,14 @@ package com.nj.baijiayun.downloader.request;
 
 import android.arch.lifecycle.LifecycleOwner;
 import android.text.TextUtils;
-
 import com.baijiayun.constant.VideoDefinition;
-import com.nj.baijiayun.downloader.ListenerTracker;
-import com.nj.baijiayun.downloader.listener.DownloadListener;
 import com.nj.baijiayun.downloader.DownloadManager;
+import com.nj.baijiayun.downloader.ListenerTracker;
 import com.nj.baijiayun.downloader.RealmManager;
+import com.nj.baijiayun.downloader.listener.DownloadListener;
 import com.nj.baijiayun.downloader.realmbean.Chapter;
 import com.nj.baijiayun.downloader.realmbean.DownloadItem;
 import com.nj.baijiayun.downloader.realmbean.DownloadParent;
-
-
 import io.realm.Realm;
 
 import java.util.List;
@@ -42,6 +39,7 @@ public abstract class DownloadRequest {
     protected String itemId;
     protected String fileGenre;
     protected String token;
+    protected String extraInfo;
     protected List<VideoDefinition> videoDefinitions;
 
 
@@ -82,6 +80,7 @@ public abstract class DownloadRequest {
         item.setFileUrl(url);
         item.setFileGenre(fileGenre);
         item.setStartTime(System.currentTimeMillis() / 1000);
+        item.setExtraInfo(extraInfo);
         setCustomParams(item);
         if (!TextUtils.isEmpty(parentId)) {
             DownloadParent parent = new DownloadParent();
@@ -217,11 +216,17 @@ public abstract class DownloadRequest {
 
     /**
      * 设置下载优先级
+     *
      * @param videoDefinitions
      * @return
      */
     public DownloadRequest setVideoDefinitions(List<VideoDefinition> videoDefinitions) {
         this.videoDefinitions = videoDefinitions;
+        return this;
+    }
+
+    public DownloadRequest setExtraInfo(String extraInfo) {
+        this.extraInfo = extraInfo;
         return this;
     }
 }

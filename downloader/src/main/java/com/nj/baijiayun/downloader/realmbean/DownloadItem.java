@@ -91,6 +91,7 @@ public class DownloadItem extends RealmObject {
     private long duration = 0;
     private String sign;
     private long startTime;
+    private String extraInfo;
 
     @Ignore
     int lastStatus = downloadStatus;
@@ -347,5 +348,13 @@ public class DownloadItem extends RealmObject {
     public boolean isPlayBack() {
         int fileType = getFileType();
         return fileType == FILE_TYPE_PLAY_BACK || fileType == FILE_TYPE_PLAY_BACK_SMALL;
+    }
+
+    public String getExtraInfo() {
+        return extraInfo;
+    }
+
+    public void setExtraInfo(String extraInfo) {
+        this.extraInfo = extraInfo;
     }
 }

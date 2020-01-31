@@ -34,7 +34,7 @@ import io.realm.Sort;
 public class UpdateProcessor implements UpdateController {
     private static final int MSG_VIDEO_INFO_UPDATE = 1;
     //文件下载恢复速度比较慢，心跳次数要增加
-    private static final int DEFAULT_LIVE = 6;
+    private static final int DEFAULT_LIVE = 10;
     public final Realm realm;
     private final FileDownloadManager fileDownloadManager;
     private final UpdateDispatcher updateDispatcher;
@@ -287,7 +287,7 @@ public class UpdateProcessor implements UpdateController {
         }
     }
 
-    private void checkToResumeProcessor() {
+    public void checkToResumeProcessor() {
         synchronized (UpdateProcessor.this) {
             liveBeats = DEFAULT_LIVE;
             if (infoUpdateHandler.isPaused) {

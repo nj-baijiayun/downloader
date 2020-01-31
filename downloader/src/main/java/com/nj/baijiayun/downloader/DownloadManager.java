@@ -4,6 +4,7 @@ import android.app.Application;
 import android.arch.lifecycle.LifecycleOwner;
 import android.content.ComponentCallbacks2;
 import android.content.res.Configuration;
+
 import com.arialyy.aria.core.Aria;
 import com.baijiayun.BJYPlayerSDK;
 import com.baijiayun.download.DownloadTask;
@@ -403,6 +404,24 @@ public class DownloadManager {
 
     private DownloadTask getDownloadTaskWithItem(DownloadItem item) {
         return videoDownloadManager.getDownloadTask(item);
+    }
+
+    public static void restartAllFile() {
+        getInstance().restartAllFileTask();
+    }
+
+    public static void pauseAllFile() {
+        getInstance().pauseAllFileTask();
+
+    }
+
+    private void restartAllFileTask() {
+        fileDownloadManager.restartAll();
+        updateProcessor.checkToResumeProcessor();
+    }
+
+    private void pauseAllFileTask() {
+        fileDownloadManager.pauseAll();
     }
 
 }
